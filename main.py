@@ -55,12 +55,12 @@ def analyze_market():
 
 # LIQUIDITY SWEEP DETECTION
 
-recent = df.iloc[-12:-2]
+    recent = df.iloc[-12:-2]
 
-swing_high = recent['high'].max()
-swing_low = recent['low'].min()
+    swing_high = recent['high'].max()
+    swing_low = recent['low'].min()
 
-bullish_sweep = (
+    bullish_sweep = (
     current['low'] < swing_low
     and current['close'] > swing_low
 )
@@ -70,15 +70,15 @@ bearish_sweep = (
     and current['close'] < swing_high
 )
 
-print("Liquidity High:", swing_high)
-print("Liquidity Low:", swing_low)
+    print("Liquidity High:", swing_high)
+    print("Liquidity Low:", swing_low)
 
-print("Bullish Sweep:", bullish_sweep)
-print("Bearish Sweep:", bearish_sweep)
+    print("Bullish Sweep:", bullish_sweep)
+    print("Bearish Sweep:", bearish_sweep)
     # CRT CANDLE DETECTION
 
-crt_high = previous['high']
-crt_low = previous['low']
+    crt_high = previous['high']
+    crt_low = previous['low']
 
 crt_bullish = (
     current['low'] < crt_low
@@ -92,10 +92,10 @@ crt_bearish = (
     and current['close'] > crt_low
 )
 
-print("CRT HIGH:", crt_high)
-print("CRT LOW:", crt_low)
-print("CRT BULLISH:", crt_bullish)
-print("CRT BEARISH:", crt_bearish)
+    print("CRT HIGH:", crt_high)
+    print("CRT LOW:", crt_low)
+    print("CRT BULLISH:", crt_bullish)
+    print("CRT BEARISH:", crt_bearish)
 
 
     # CRT + EMA CONFIRMATION
