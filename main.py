@@ -8,7 +8,7 @@ import requests
 
 
 # ============================================================
-# CRT KING AI - Binance USDT-M Futures market scanner
+# CRT KING AI - OKX USDT perpetual swap market scanner
 # READ-ONLY: This bot analyses prices and sends Telegram alerts.
 # It DOES NOT place, modify, or close trades.
 #
@@ -57,10 +57,11 @@ def send_telegram(message):
 
 
 def create_exchange():
-    exchange = ccxt.binanceusdm({
+    # Public market-data access only; no API keys and no order permissions.
+    exchange = ccxt.okx({
         "enableRateLimit": True,
         "timeout": 20000,
-        "options": {"defaultType": "future"},
+        "options": {"defaultType": "swap"},
     })
     return exchange
 
@@ -251,7 +252,7 @@ def make_alert_message(result):
 
 def main():
     print("=" * 55)
-    print("CRT KING AI - TOP 20 BINANCE USDT PERPETUAL SCANNER")
+    print("CRT KING AI - TOP 20 OKX USDT PERPETUAL SCANNER")
     print("READ-ONLY: no trades will be placed.")
     print(f"Timeframe: {TIMEFRAME} | Scan interval: {SCAN_INTERVAL_SECONDS}s")
     print("=" * 55)
@@ -318,3 +319,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
