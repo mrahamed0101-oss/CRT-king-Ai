@@ -22,7 +22,7 @@ COLUMNS = ["time", "open", "high", "low", "close", "volume"]
 
 
 def create_exchange():
-        def create_exchange():
+    
     exchange = ccxt.okx({
         "enableRateLimit": True,
         "timeout": 20000,
