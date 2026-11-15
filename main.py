@@ -22,10 +22,10 @@ COLUMNS = ["time", "open", "high", "low", "close", "volume"]
 
 
 def create_exchange():
-         exchange = ccxt.okx({
+        "exchange = ccxt.okx({
         "enableRateLimit": True,
         "timeout": 20000,
-        "options": {"defaultType": "future"},
+        "options": {"defaultType": "swap"},
     })
     exchange.load_markets()
     return exchange
