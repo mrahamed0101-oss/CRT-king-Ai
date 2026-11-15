@@ -75,7 +75,27 @@ print("Liquidity Low:", swing_low)
 
 print("Bullish Sweep:", bullish_sweep)
 print("Bearish Sweep:", bearish_sweep)
-    
+    # CRT CANDLE DETECTION
+
+crt_high = previous['high']
+crt_low = previous['low']
+
+crt_bullish = (
+    current['low'] < crt_low
+    and current['close'] > crt_low
+    and current['close'] < crt_high
+)
+
+crt_bearish = (
+    current['high'] > crt_high
+    and current['close'] < crt_high
+    and current['close'] > crt_low
+)
+
+print("CRT HIGH:", crt_high)
+print("CRT LOW:", crt_low)
+print("CRT BULLISH:", crt_bullish)
+print("CRT BEARISH:", crt_bearish)
 
 
     if (
