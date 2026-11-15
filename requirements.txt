@@ -1,2 +1,3 @@
-ccxt
-pandas
+ccxt>=4.4.0
+pandas>=2.0.0
+
