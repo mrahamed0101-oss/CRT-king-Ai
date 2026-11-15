@@ -128,7 +128,7 @@ def analyze(inst,c):
     else:
         stop=max(sh,obS[1] if obS else sh)+a*.15; risk=stop-z["c"]; t=[z["c"]-risk*i for i in (1,2,3)]; tags=ss[1]
     if risk<=0:return None
-    return dict(inst=inst,d=direction,entry=z["c"],sl=stop,tp=t,ls=ls[0],ss=ss[0],tags=tags,
+    return dict(inst=inst,d=direction,direction=direction,entry=z["c"],sl=stop,tp=t,ls=ls[0],ss=ss[0],tags=tags,
       ema=es,range=(rl,rh),swings=(slw,sh),bos="Bullish" if bosL else "Bearish" if bosS else "None",
       choch="Bullish" if chochL else "Bearish" if chochS else "None",sweep="Sell-side" if sweepL else "Buy-side" if sweepS else "None",
       zone="Discount" if discount else "Premium" if premium else "Equilibrium",ob=(obL,obS),
@@ -158,7 +158,7 @@ def main():
             for inst in symbols:
                 try:
                     commands(); s=analyze(inst,candles(inst))
-                    if not s or s["direction"]=="WAIT":continue
+                    if not s or s.get("direction", s.get("d", "WAIT"))=="WAIT":continue
                     key=(inst,s["d"]); now=time.time()
                     if now-last_alert.get(key,0)<COOLDOWN:continue
                     if send(message(s)):last_alert[key]=now;count+=1
@@ -173,6 +173,7 @@ def main():
             time.sleep(5)
 
 if __name__=="__main__":main()
+
 
 
 
