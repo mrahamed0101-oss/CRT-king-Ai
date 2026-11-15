@@ -65,9 +65,9 @@ def analyze_market():
     and current['close'] > swing_low
 )
 
-bearish_sweep = (
-    current['high'] > swing_high
-    and current['close'] < swing_high
+    bearish_sweep = (
+        current['high'] > swing_high
+        and current['close'] < swing_high
 )
 
     print("Liquidity High:", swing_high)
@@ -80,16 +80,16 @@ bearish_sweep = (
     crt_high = previous['high']
     crt_low = previous['low']
 
-crt_bullish = (
-    current['low'] < crt_low
-    and current['close'] > crt_low
-    and current['close'] < crt_high
+    crt_bullish = (
+        current['low'] < crt_low
+        and current['close'] > crt_low
+        and current['close'] < crt_high
 )
 
-crt_bearish = (
-    current['high'] > crt_high
-    and current['close'] < crt_high
-    and current['close'] > crt_low
+    crt_bearish = (
+        current['high'] > crt_high
+        and current['close'] < crt_high
+        and current['close'] > crt_low
 )
 
     print("CRT HIGH:", crt_high)
