@@ -250,15 +250,28 @@ def main():
                 print(", ".join(symbols))
 
             print(f"\nSCAN #{scan_count} | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            for symbol in symbols:
-                try:
-                    print_result(analyze_symbol(exchange, symbol))
-                except ccxt.NetworkError as err:
-                    print(f"{symbol}: Network error: {err}")
-                except ccxt.ExchangeError as err:
-                    print(f"{symbol}: Exchange error: {err}")
-                except Exception as err:
-                    print(f"{symbol}: Analysis error: {err}")
+        for symbol in symbols:
+            try:
+                r = analyze_symbol(symbol)
+                print_result(r)
+
+                if r["signal"] in ("LONG", "SHORT"):
+                    message = (
+                        "👑 CRT KING AI ALERT\n\n"
+                        f"Coin: {r['symbol']}\n"
+                        f"Signal: {r['signal']}\n"
+                        f"Price: {r['price']}\n"
+                        f"LONG Score: {r['long_score']}\n"
+                        f"SHORT Score: {r['short_score']}\n"
+                        "Timeframe: 15m"
+                    )
+                    send_telegram(message)
+         except ccxt.NetworkError as err:
+                print(f"{symbol}: Network error: {err}")
+         except ccxt.ExchangeError as err:
+                print(f"{symbol}: Exchange error: {err}")
+         except Exception as err:
+                print(f"{symbol}: Analysis error: {err}")
 
             remaining = max(5, SCAN_INTERVAL_SECONDS - (time.time() - started))
             print(f"\nScan complete. Next scan in about {int(remaining)} seconds.")
