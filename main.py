@@ -22,7 +22,7 @@ COLUMNS = ["time", "open", "high", "low", "close", "volume"]
 
 
 def create_exchange():
-    exchange = ccxt.binanceusdm({
+         exchange = ccxt.okx({
         "enableRateLimit": True,
         "timeout": 20000,
         "options": {"defaultType": "future"},
