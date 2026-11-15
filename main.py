@@ -46,8 +46,8 @@ def analyze_market():
         span=20
     ).mean()
 
-    previous = df.iloc[-2]
-    current = df.iloc[-1]
+    previous = df.iloc[-3]
+    current = df.iloc[-2]
 
     price = current['close']
 
