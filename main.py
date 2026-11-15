@@ -206,7 +206,24 @@ def print_result(r):
     print(f"Order block heuristic: bullish={r['bullish_ob']} bearish={r['bearish_ob']}")
     print(f"Support: {r['support']:.8g} | Resistance: {r['resistance']:.8g}")
     print("=" * 60)
+import requests
+import os
 
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
+def send_telegram(message):
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        print("Telegram settings missing")
+        return
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    data = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message
+    }
+
+    requests.post(url, data=data, timeout=15)
 
 def main():
     print("=" * 60)
