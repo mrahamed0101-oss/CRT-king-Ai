@@ -53,15 +53,30 @@ def analyze_market():
 
     print("\nBTC PRICE:", price)
 
-    bullish_sweep = (
-        current['low'] < previous['low']
-        and current['close'] > previous['low']
-    )
+# LIQUIDITY SWEEP DETECTION
 
-    bearish_sweep = (
-        current['high'] > previous['high']
-        and current['close'] < previous['high']
-    )
+recent = df.iloc[-12:-2]
+
+swing_high = recent['high'].max()
+swing_low = recent['low'].min()
+
+bullish_sweep = (
+    current['low'] < swing_low
+    and current['close'] > swing_low
+)
+
+bearish_sweep = (
+    current['high'] > swing_high
+    and current['close'] < swing_high
+)
+
+print("Liquidity High:", swing_high)
+print("Liquidity Low:", swing_low)
+
+print("Bullish Sweep:", bullish_sweep)
+print("Bearish Sweep:", bearish_sweep)
+    
+
 
     if (
         bullish_sweep
