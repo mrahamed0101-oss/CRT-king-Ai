@@ -98,20 +98,22 @@ print("CRT BULLISH:", crt_bullish)
 print("CRT BEARISH:", crt_bearish)
 
 
-    if (
-        bullish_sweep
-        and current['EMA9'] > current['EMA20']
-    ):
-        print("SIGNAL: LONG")
+    # CRT + EMA CONFIRMATION
 
-    elif (
-        bearish_sweep
-        and current['EMA9'] < current['EMA20']
-    ):
-        print("SIGNAL: SHORT")
+if (
+    crt_bullish
+    and current['EMA9'] > current['EMA20']
+):
+    print("🔥 CRT SIGNAL: LONG")
 
-    else:
-        print("SIGNAL: WAIT")
+elif (
+    crt_bearish
+    and current['EMA9'] < current['EMA20']
+):
+    print("🔴 CRT SIGNAL: SHORT")
+
+else:
+    print("⏳ CRT SIGNAL: WAIT")
 
 while True:
 
