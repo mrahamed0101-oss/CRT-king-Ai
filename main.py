@@ -15,7 +15,7 @@ exchange = ccxt.binanceusdm({
 
 exchange.set_sandbox_mode(True)
 
-SYMBOL = 'BTC/USDT'
+SYMBOL = 'BTC/USDT:USDT'
 TIMEFRAME = '15m'
 
 def analyze_market():
