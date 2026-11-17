@@ -106,7 +106,7 @@ def poll_telegram_commands():
         if command in ("/start", "/help"):
             telegram_send(
                 "👑 CRT KING AI — STRICT MODE\n\n"
-                "/start - Start\n/help - Help\n/status - Scanner status\n\n"
+                "/start - Start\n/help - Help\n/status - Scanner status\n/diagnostic - Why no signal?\n/backtest - Run 12-month historical backtest\n\n"
                 "4H = higher-timeframe structure\n"
                 "1H = confirmation\n"
                 "15m = entry setup\n"
@@ -116,6 +116,8 @@ def poll_telegram_commands():
             )
         elif command == "/backtest":
             threading.Thread(target=run_backtest, args=(chat,), daemon=True).start()
+        elif command == "/diagnostic":
+            threading.Thread(target=run_diagnostic, args=(chat,), daemon=True).start()
         elif command == "/status":
             telegram_send(
                 "👑 CRT KING AI STATUS\n"
@@ -573,6 +575,133 @@ def evaluate_market(instrument, candles_4h, candles_1h, candles_15m):
 
 
 
+# -------------------- DIAGNOSTIC MODE --------------------
+def diagnose_market(instrument, candles_4h, candles_1h, candles_15m):
+    """Explain each strict gate without changing the live signal rules."""
+    if min(len(candles_4h), len(candles_1h), len(candles_15m)) < 60:
+        return {"symbol": instrument, "error": "Not enough closed candles"}
+
+    s4 = structure_analysis(candles_4h)
+    s1 = structure_analysis(candles_1h)
+    s15 = structure_analysis(candles_15m)
+    a4 = average_true_range(candles_4h)
+    a1 = average_true_range(candles_1h)
+    a15 = average_true_range(candles_15m)
+    if not all((s4, s1, s15, a4, a1, a15)):
+        return {"symbol": instrument, "error": "Structure/ATR could not be calculated"}
+
+    ema4, _ = ema_bias(candles_4h)
+    ema1, _ = ema_bias(candles_1h)
+    last = candles_15m[-1]
+    liq15 = detect_liquidity_sweep(candles_15m, s15, a15)
+    liq1 = detect_liquidity_sweep(candles_1h, s1, a1)
+    fvg15 = detect_fvg_zone(candles_15m, a15)
+    ob15 = detect_order_block(candles_15m, s15, a15)
+    fvg1 = detect_fvg_zone(candles_1h, a1)
+    ob1 = detect_order_block(candles_1h, s1, a1)
+    pd_loc, _, _, _ = premium_discount(candles_15m)
+    bull_shift = s15["choch"] == "Bullish" or s15["bos"] == "Bullish"
+    bear_shift = s15["choch"] == "Bearish" or s15["bos"] == "Bearish"
+    results = []
+
+    for direction in ("Bullish", "Bearish"):
+        long_side = direction == "Bullish"
+        expected_sweep = "Sell-side" if long_side else "Buy-side"
+        expected_pd = "Discount" if long_side else "Premium"
+        htf = (s4["bias"] == direction and s1["bias"] == direction
+               and ema4 == direction and ema1 == direction
+               and s4["bos"] == direction and s1["bos"] == direction)
+        crt_ok, _, _ = crt_range_reclaim(candles_15m, direction)
+        checks = {
+            "4H+1H structure/EMA/BOS": htf,
+            "1H liquidity sweep": liq1["label"] == expected_sweep,
+            "1H valid OB": ob1 is not None and ob1[0] == direction,
+            "1H valid FVG": fvg1 is not None and fvg1[0] == direction,
+            "15m liquidity sweep": liq15["label"] == expected_sweep,
+            "15m BOS/CHoCH": bull_shift if long_side else bear_shift,
+            "15m CRT reclaim": crt_ok,
+            "15m OB retest": zone_retest(last, ob15, direction),
+            "15m FVG retest": (fvg15 is not None and fvg15[0] == direction
+                               and last["low"] <= fvg15[2] and last["high"] >= fvg15[1]),
+            "Premium/Discount": pd_loc == expected_pd,
+            "15m candle direction": (last["close"] > last["open"] if long_side
+                                      else last["close"] < last["open"])
+        }
+        # Scalp has a less restrictive 4H requirement; show it separately.
+        scalp_htf = (s4["bias"] in (direction, "Neutral") and s1["bias"] == direction
+                     and ema1 == direction and s1["bos"] == direction)
+        results.append({
+            "direction": "LONG" if long_side else "SHORT",
+            "checks": checks,
+            "scalp_htf": scalp_htf,
+            "swing_pass": all(checks.values()) and ENABLE_SWING,
+            "scalp_pass": (scalp_htf and all(v for k, v in checks.items()
+                            if k != "4H+1H structure/EMA/BOS") and ENABLE_SCALPING),
+            "fails": [name for name, passed in checks.items() if not passed]
+        })
+    return {
+        "symbol": instrument,
+        "bias": f"4H {s4['bias']} / 1H {s1['bias']} / 15m {s15['bias']}",
+        "ema": f"4H {ema4} / 1H {ema1}",
+        "bos": f"4H {s4['bos']} / 1H {s1['bos']} / 15m BOS {s15['bos']} CHoCH {s15['choch']}",
+        "liquidity": f"1H {liq1['label']} / 15m {liq15['label']}",
+        "directions": results
+    }
+
+
+def run_diagnostic(chat_id):
+    """One-shot diagnostics for top markets; does not alter or relax strategy."""
+    telegram_send("🔎 CRT KING AI DIAGNOSTIC STARTED\nChecking current closed candles. No strategy rules changed.", chat_id)
+    try:
+        symbols = get_universe()
+        fail_counts = {}
+        details = []
+        passed_any = 0
+        for instrument in symbols:
+            try:
+                c4 = get_candles(instrument, "4H")
+                c1 = get_candles(instrument, "1H")
+                c15 = get_candles(instrument, "15m")
+                report = diagnose_market(instrument, c4, c1, c15)
+                if "error" in report:
+                    fail_counts[report["error"]] = fail_counts.get(report["error"], 0) + 1
+                    details.append(f"{instrument}: {report['error']}")
+                    continue
+                lines = [f"{instrument}: {report['bias']} | EMA {report['ema']}",
+                         f"BOS: {report['bos']} | Liquidity: {report['liquidity']}"]
+                for side in report["directions"]:
+                    if side["swing_pass"] or side["scalp_pass"]:
+                        passed_any += 1
+                        lines.append(f"{side['direction']}: SETUP PASS")
+                    else:
+                        failed = side["fails"]
+                        # Report the most important failed gates, not a huge dump.
+                        lines.append(f"{side['direction']} WAIT: " + (", ".join(failed[:5]) if failed else "Scalp/Swing filter"))
+                        for item in failed:
+                            fail_counts[item] = fail_counts.get(item, 0) + 1
+                details.append("\n".join(lines))
+            except Exception as exc:
+                fail_counts["API/scan error"] = fail_counts.get("API/scan error", 0) + 1
+                details.append(f"{instrument}: API/scan error: {str(exc)[:100]}")
+            time.sleep(0.15)
+
+        top_fails = sorted(fail_counts.items(), key=lambda x: x[1], reverse=True)[:8]
+        summary = ["👑 CRT KING AI — DIAGNOSTIC REPORT",
+                   f"Markets checked: {len(symbols)}",
+                   f"Potential strict setups passing: {passed_any}",
+                   "Most common blockers:"]
+        summary += [f"• {name}: {count} market-side checks failed" for name, count in top_fails]
+        summary += ["", "MARKET DETAILS (first 8):"]
+        summary += details[:8]
+        summary += ["", "Note: Diagnostic only. It does not loosen strict rules or place orders."]
+        message = "\n".join(summary)
+        # Telegram messages have a 4096-character limit.
+        telegram_send(message[:3900], chat_id)
+    except Exception as exc:
+        log.exception("Diagnostic failed")
+        telegram_send("❌ Diagnostic error: " + str(exc)[:300], chat_id)
+
+
 
 # -------------------- 12-MONTH HISTORICAL BACKTEST --------------------
 BACKTEST_MONTHS = 12
@@ -1024,6 +1153,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
